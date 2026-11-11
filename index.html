@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All-in-One Anime Studio</title>
+  <style>
+    :root {
+      --bg: #0f111a;
+      --panel: #1a1d2d;
+      --accent: #ff477e;
+      --accent2: #70e000;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; }
+    header { background: var(--panel); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d324d; }
+    header h1 { margin: 0; font-size: 1.2rem; color: var(--accent); }
+    nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    nav button { background: #262b42; color: var(--text); border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    nav button.active { background: var(--accent); color: #fff; }
+    main { flex: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: center; }
+    .stage { display: none; width: 100%; max-width: 1000px; background: var(--panel); padding: 20px; border-radius: 12px; }
+    .stage.active { display: block; }
+    h2 { margin-top: 0; border-bottom: 1px solid #2d324d; padding-bottom: 10px; }
+    textarea, input, select { width: 100%; padding: 10px; margin: 8px 0 16px; border-radius: 6px; border: 1px solid #333958; background: #0f111a; color: #fff; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn.secondary { background: #2d324d; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    canvas { background: #ffffff; border-radius: 8px; cursor: crosshair; display: block; margin: 10px auto; border: 3px solid #2d324d; max-width: 100%; }
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: #0f111a; padding: 10px; border-radius: 8px; }
+    .frames-bar { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; }
+    .frame-thumb { padding: 8px 12px; background: #262b42; border-radius: 6px; cursor: pointer; border: 2px solid transparent; white-space: nowrap; }
+    .frame-thumb.active { border-color: var(--accent); }
+    #ai-preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: 8px; background: #0f111a; display: none; margin-top: 10px; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ AnimeForge All-in-One Studio</h1>
+  <nav>
+    <button class="tab-btn active" onclick="openStage('stage1', this)">1. Script & Scenes</button>
+    <button class="tab-btn" onclick="openStage('stage2', this)">2. AI Characters & BG</button>
+    <button class="tab-btn" onclick="openStage('stage3', this)">3. Draw & Animate</button>
+    <button class="tab-btn" onclick="openStage('stage4', this)">4. Voice & Audio</button>
+    <button class="tab-btn" onclick="openStage('stage5', this)">5. Preview & Export</button>
+  </nav>
+</header>
+
+<main>
+  <!-- STAGE 1: SCRIPT -->
+  <section id="stage1" class="stage active">
+    <h2>Stage 1: Anime Script & Storyboard Planner</h2>
+    <label>Anime Title</label>
+    <input type="text" id="animeTitle" placeholder="e.g., Cyber Samurai of Neo-Lagos" />
+    <label>Anime Style / Genre</label>
+    <select id="animeGenre">
+      <option>Shonen Action (90s Cel-Shaded)</option>
+      <option>Modern Dark Fantasy (High Contrast)</option>
+      <option>Slice of Life / Romance (Soft Pastel)</option>
+      <option>Mecha / Sci-Fi</option>
+      <option>Chibi Comedy</option>
+    </select>
+    <label>Episode Script & Scene Breakdown</label>
+    <textarea id="scriptBox" rows="8" placeholder="Scene 1: Rain falls over the neon rooftop. Hero draws his glowing blade..."></textarea>
+    <button class="btn" onclick="saveProject()">Save Script & Continue →</button>
+  </section>
+
+  <!-- STAGE 2: AI CHARACTER & BACKGROUND GENERATOR -->
+  <section id="stage2" class="stage">
+    <h2>Stage 2: Free AI Character & Background Generator</h2>
+    <p style="color:var(--muted)">Generate anime characters, outfits, or backgrounds for free (no API key needed) and send them to your drawing canvas.</p>
+    <div class="grid-2">
+      <div>
+        <label>Asset Type</label>
+        <select id="assetType">
+          <option value="anime character sheet, front and side view, white background">Character Sheet</option>
+          <option value="anime scenery background, detailed makoto shinkai style, no characters">Anime Background</option>
+          <option value="anime action pose, dynamic lighting">Action Pose Reference</option>
+        </select>
+        <label>Describe Your Character or Scene</label>
+        <textarea id="aiPrompt" rows="4" placeholder="e.g., young warrior with spiky silver hair, red jacket, katana, fierce eyes"></textarea>
+        <button class="btn" onclick="generateAnimeArt()">✨ Generate Anime Art</button>
+        <button class="btn secondary" onclick="loadImageToCanvas()">Send to Drawing Canvas →</button>
+      </div>
+      <div style="text-align:center;">
+        <p id="aiStatus" style="color:var(--muted)">Your generated art will appear here.</p>
+        <img id="ai-preview" crossorigin="anonymous" alt="Generated Anime Art" />
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE 3: DRAWING & FRAME-BY-FRAME ANIMATION -->
+  <section id="stage3" class="stage">
+    <h2>Stage 3: 2D Drawing & Frame-by-Frame Animator</h2>
+    <div class="toolbar">
+      <label style="margin:0">Color: <input type="color" id="brushColor" value="#111111" style="width:45px;margin:0;padding:2px;" /></label>
+      <label style="margin:0">Size: <input type="range" id="brushSize" min="1" max="30" value="4" style="width:90px;margin:0;" /></label>
+      <button class="btn secondary" onclick="setEraser()">Eraser</button>
+      <button class="btn secondary" onclick="setPen()">Pen</button>
+      <button class="btn secondary" onclick="clearCanvas()">Clear Frame</button>
+      <button class="btn" onclick="addNewFrame()">+ Add Frame</button>
+      <button class="btn secondary" onclick="duplicateFrame()">Duplicate Frame</button>
+    </div>
+    <canvas id="drawCanvas" width="720" height="405"></canvas>
+    <div class="frames-bar" id="framesBar"></div>
+  </section>
+
+  <!-- STAGE 4: VOICE & AUDIO -->
+  <section id="stage4" class="stage">
+    <h2>Stage 4: Voice Acting & Audio Recorder</h2>
+    <p style="color:var(--muted)">Record your character dialogue right from your microphone.</p>
+    <button class="btn" id="recBtn" onclick="toggleRecording()">🎙️ Start Recording Voice</button>
+    <p id="recStatus" style="color:var(--accent2)"></p>
+    <audio id="audioPlayback" controls style="width:100%; margin-top:15px;"></audio>
+  </section>
+
+  <!-- STAGE 5: PREVIEW & EXPORT -->
+  <section id="stage5" class="stage">
+    <h2>Stage 5: Watch Anime & Export Video</h2>
+    <div class="toolbar">
+      <label style="margin:0">FPS Speed: <input type="number" id="fpsInput" value="6" min="1" max="24" style="width:65px;margin:0;" /></label>
+      <button class="btn" onclick="playAnime()">▶ Play Anime</button>
+      <button class="btn secondary" onclick="stopAnime()">⏹ Stop</button>
+      <button class="btn" style="background:#16a34a" onclick="exportVideo()">⬇ Export Video (.webm)</button>
+    </div>
+    <canvas id="previewCanvas" width="720" height="405"></canvas>
+    <p id="exportStatus" style="text-align:center; color:var(--accent2);"></p>
+  </section>
+</main>
+
+<script>
+  function openStage(id, btn) {
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'stage5') renderPreviewFrame(0);
+  }
+
+  function saveProject() {
+    localStorage.setItem('animeTitle', document.getElementById('animeTitle').value);
+    localStorage.setItem('scriptBox', document.getElementById('scriptBox').value);
+    alert('Script saved in your browser!');
+  }
+
+  function generateAnimeArt() {
+    const type = document.getElementById('assetType').value;
+    const desc = document.getElementById('aiPrompt').value.trim();
+    if (!desc) return alert('Please describe your character or scene first.');
+    const fullPrompt = encodeURIComponent(`anime style, ${type}, ${desc}, high quality lineart`);
+    const url = `https://pollinations.ai{fullPrompt}?width=720&height=405&nologo=true&seed=${Date.now()}`;
+    const img = document.getElementById('ai-preview');
+    document.getElementById('aiStatus').innerText = 'Generating anime artwork... please wait a few seconds...';
+    img.style.display = 'none';
+    img.onload = () => {
+      document.getElementById('aiStatus').innerText = 'Done! Click "Send to Drawing Canvas" to trace or animate over it.';
+      img.style.display = 'block';
+    };
+    img.src = url;
+  }
+
+  function loadImageToCanvas() {
+    const img = document.getElementById('ai-preview');
+    if (!img.src || img.style.display === 'none') return alert('Generate an image first!');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    saveCurrentFrame();
+    alert('Image added to your current animation frame!');
+  }
+
+  const canvas = document.getElementById('drawCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let drawing = false;
+  let erasing = false;
+  let frames = [canvas.toDataURL()];
+  let currentFrame = 0;
+
+  function setEraser() { erasing = true; }
+  function setPen() { erasing = false; }
+
+  canvas.addEventListener('mousedown', (e) => { drawing = true; draw(e); });
+  canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); saveCurrentFrame(); });
